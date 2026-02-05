@@ -41,10 +41,14 @@ export class CouponsService {
     return `Se eliminó el cupón: ${coupon.name}`;
   }
 
+  async applyCoupon(coupon: ApplyCouponDto) {
+    const c = await this.couponRepository.find({
+      where:{
+        name:coupon.name
+      }
+    })
 
-  applyCoupon(coupon: ApplyCouponDto) {
-    console.log(coupon)
-    return `apply coupon ${coupon.name}`
+    return `apply coupon ${c}`
   }
 
 }
