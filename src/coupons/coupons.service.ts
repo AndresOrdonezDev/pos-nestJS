@@ -1,9 +1,10 @@
-import { Injectable, NotFoundException, Post } from '@nestjs/common';
-import { ApplyCouponDto, CreateCouponDto } from './dto/create-coupon.dto';
+import { Injectable, NotFoundException, UnprocessableEntityException} from '@nestjs/common';
+import { CreateCouponDto } from './dto/create-coupon.dto';
 import { UpdateCouponDto } from './dto/update-coupon.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Coupon } from './entities/coupon.entity';
 import { Repository } from 'typeorm';
+import { isAfter } from 'date-fns';
 
 @Injectable()
 export class CouponsService {
@@ -13,6 +14,8 @@ export class CouponsService {
   ) { }
 
   async create(createCouponDto: CreateCouponDto) {
+    //to normalize coupon name
+    //return await this.couponRepository.save({...createCouponDto, name: createCouponDto.name.toLowerCase()});
     return await this.couponRepository.save(createCouponDto);
   }
 
@@ -41,14 +44,21 @@ export class CouponsService {
     return `Se eliminó el cupón: ${coupon.name}`;
   }
 
-  async applyCoupon(coupon: ApplyCouponDto) {
-    const c = await this.couponRepository.find({
-      where:{
-        name:coupon.name
-      }
-    })
-
-    return `apply coupon ${c}`
+  async applyCoupon(name: string) {
+    //if normalize name coupons
+    //const name = nameCoupon.toLowerCase().trim()
+    const coupon = await this.couponRepository.findOneBy({name})
+    if(!coupon){
+      throw new NotFoundException('Cupón no existe')
+    }
+    const currentDate = new Date()
+    const expirationDate = coupon.expirationDate
+    if(isAfter(currentDate,expirationDate)){
+      throw new UnprocessableEntityException('Cupón expirado')
+    }
+    return {
+      message:'Cupón Aplicado',
+      ...coupon
+    }
   }
-
 }
